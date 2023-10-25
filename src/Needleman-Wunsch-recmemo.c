@@ -209,61 +209,108 @@ long EditDistance_NW_Iter(char *A, size_t lengthA, char *B, size_t lengthB)
    size_t M = ctx.M;
    size_t N = ctx.N;
 
-   long *X_prev = (long *)malloc((M + 1) * sizeof(long));
-   long *X_next = (long *)malloc((M + 1) * sizeof(long));
-   long *Y_initial_col = (long *)malloc((N + 1) * sizeof(long));
-
-   for (int i = 0; i <= M; i++)
+   long *Y_col = (long *)malloc((N + 1) * sizeof(long));
+   if (Y_col == NULL)
    {
-      X_prev[i] = i * INSERTION_COST;
-
-      // X_next[i] = i * INSERTION_COST;
+      perror("EditDistance_NW_Iter: malloc of Y_col. You must have at least one!");
+      exit(EXIT_FAILURE);
    }
-   for (int j = 0; j <= N; j++)
+   Y_col[N] = 0;
+   for (int col = N - 1; col >= 0; col--)
    {
-      Y_initial_col[j] = j * INSERTION_COST;
+      Y_col[col] = (isBase(ctx.Y[col]) ? INSERTION_COST : 0) + Y_col[col + 1];
    }
-   // print_array(X_prev, M + 1);
-   // print_array(Y_initial_col, N + 1);
 
-   for (int row = 1; row <= N; row++)
+   long prev_value;
+
+   for (int row = M - 1; row >= 0; row--)
    {
-      for (int col = 1; col <= M + 1; col++)
+      for (int col = N; col >= 0; col--)
       {
-         // print_array(X_prev, M + 1);
-         // printf("X: %sY: %s\n", ctx.X, ctx.Y);
-         // printf("Char X = %c, col = %d\n", ctx.X[col - 1], col - 1);
-         // printf("Char Y = %c, row = %d\n", ctx.Y[row - 1], row - 1);
-         // if (!isBase(ctx.X[col - 1]))
-         // {
-         //    continue;
-         // }
-
-         int malus = isSameBase(ctx.X[col - 1], ctx.Y[row - 1]) ? 0 : SUBSTITUTION_COST;
-         if (col == 1)
+         if (col == N)
          {
-            int diag = Y_initial_col[row - 1] + malus;
-            int left = Y_initial_col[row] + INSERTION_COST;
-            int top = X_prev[col] + INSERTION_COST;
-            X_next[col] = min(diag, left, top);
+            prev_value = Y_col[col];
+            Y_col[col] = (isBase(ctx.X[row]) ? INSERTION_COST : 0) + Y_col[col];
+         }
+         else if (!isBase(ctx.X[row]))
+         {
+            prev_value = Y_col[col];
+            ManageBaseError(ctx.X[row]);
+         }
+         else if (!isBase(ctx.Y[col]))
+         {
+            prev_value = Y_col[col];
+            Y_col[col] = Y_col[col + 1];
+            ManageBaseError(ctx.Y[col]);
          }
          else
          {
-            int diag = X_prev[col - 1] + malus;
-            int left = X_next[col - 1] + INSERTION_COST;
-            int right = X_prev[col] + INSERTION_COST;
-            X_next[col] = min(diag, left, right);
+            long diag = (isUnknownBase(ctx.X[row]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[row], ctx.Y[col]) ? 0 : SUBSTITUTION_COST)) + prev_value;
+            long left = INSERTION_COST + Y_col[col + 1];
+            long top = INSERTION_COST + Y_col[col];
+            prev_value = Y_col[col];
+            Y_col[col] = min(diag, left, top);
          }
       }
-      for (int i = 0; i <= M; i++)
-      {
-         X_prev[i] = X_next[i];
-      }
-      // printf("row = %d", row);
-      // print_array(X_next, M + 1);
    }
 
-   return X_next[M];
+   return Y_col[0];
+
+   // long *X_prev = (long *)malloc((M + 1) * sizeof(long));
+   // long *X_next = (long *)malloc((M + 1) * sizeof(long));
+   // long *Y_initial_col = (long *)malloc((N + 1) * sizeof(long));
+
+   // for (int i = 0; i <= M; i++)
+   // {
+   //    X_prev[i] = i * INSERTION_COST;
+
+   //    // X_next[i] = i * INSERTION_COST;
+   // }
+   // for (int j = 0; j <= N; j++)
+   // {
+   //    Y_initial_col[j] = j * INSERTION_COST;
+   // }
+   // // print_array(X_prev, M + 1);
+   // // print_array(Y_initial_col, N + 1);
+
+   // for (int row = 1; row <= N; row++)
+   // {
+   //    for (int col = 1; col <= M; col++)
+   //    {
+   //       // print_array(X_prev, M + 1);
+   //       // printf("X: %sY: %s\n", ctx.X, ctx.Y);
+   //       // printf("Char X = %c, col = %d\n", ctx.X[col - 1], col - 1);
+   //       // printf("Char Y = %c, row = %d\n", ctx.Y[row - 1], row - 1);
+   //       // if (!isBase(ctx.X[col - 1]))
+   //       // {
+   //       //    continue;
+   //       // }
+
+   //       int malus = isSameBase(ctx.X[col - 1], ctx.Y[row - 1]) ? 0 : SUBSTITUTION_COST;
+   //       if (col == 1)
+   //       {
+   //          int diag = Y_initial_col[row - 1] + malus;
+   //          int left = Y_initial_col[row] + INSERTION_COST;
+   //          int top = X_prev[col] + INSERTION_COST;
+   //          X_next[col] = min(diag, left, top);
+   //       }
+   //       else
+   //       {
+   //          int diag = X_prev[col - 1] + malus;
+   //          int left = X_next[col - 1] + INSERTION_COST;
+   //          int top = X_prev[col] + INSERTION_COST;
+   //          X_next[col] = min(diag, left, top);
+   //       }
+   //    }
+   //    for (int i = 0; i <= M; i++)
+   //    {
+   //       X_prev[i] = X_next[i];
+   //    }
+   //    // printf("row = %d", row);
+   //    // print_array(X_next, M + 1);
+   // }
+
+   // return X_next[M];
 }
 
 long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)
