@@ -337,4 +337,119 @@ long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)
    }
    size_t M = ctx.M;
    size_t N = ctx.N;
+   long * ligne = malloc(ctx.M * sizeof(long));
+   long * colonne = malloc(ctx.M * sizeof(long));
+   // Initialisation de la dernière ligne
+   ligne[ctx.M - 1] = 0;
+   for (int i = ctx.M - 2; i >= 0; i--)
+   {
+      ligne[i] = 2 * isBase(ctx.X[i]) + ligne[i + 1];
+   }
+   // Initialisation de la dernière colonne
+   colonne[ctx.M - 1] = 0;
+   for (int i = ctx.M - 2; i >= 0; i--)
+   {
+      colonne[i] = 2 * isBase(ctx.Y[i]) + colonne[i + 1];
+   }
+   // Remplissage du tableau
+   
+
+
 }
+
+
+static long EditDistance_NW_RecMemo(struct NW_MemoContext *c, size_t i, size_t j)
+/* compute and returns phi(i,j) using data in c -allocated and initialized by EditDistance_NW_Rec */
+{
+   if (c->memo[i][j] == NOT_YET_COMPUTED)
+   {
+      long res;
+      char Xi = c->X[i];
+      char Yj = c->Y[j];
+      if (i == c->M) /* Reach end of X */
+      {
+         if (j == c->N)
+            res = 0; /* Reach end of Y too */
+         else
+            res = (isBase(Yj) ? INSERTION_COST : 0) + EditDistance_NW_RecMemo(c, i, j + 1);
+      }
+      else if (j == c->N) /* Reach end of Y but not end of X */
+      {
+         res = (isBase(Xi) ? INSERTION_COST : 0) + EditDistance_NW_RecMemo(c, i + 1, j);
+      }
+      else if (!isBase(Xi)) /* skip ccharacter in Xi that is not a base */
+      {
+         ManageBaseError(Xi);
+         res = EditDistance_NW_RecMemo(c, i + 1, j);
+      }
+      else if (!isBase(Yj)) /* skip ccharacter in Yj that is not a base */
+      {
+         ManageBaseError(Yj);
+         res = EditDistance_NW_RecMemo(c, i, j + 1);
+      }
+      else
+      {             /* Note that stopping conditions (i==M) and (j==N) are already stored in c->memo (cf EditDistance_NW_Rec) */
+         long min = /* initialization  with cas 1*/
+             (isUnknownBase(Xi) ? SUBSTITUTION_UNKNOWN_COST
+                                : (isSameBase(Xi, Yj) ? 0 : SUBSTITUTION_COST)) +
+             EditDistance_NW_RecMemo(c, i + 1, j + 1);
+         {
+            long cas2 = INSERTION_COST + EditDistance_NW_RecMemo(c, i + 1, j);
+            if (cas2 < min)
+               min = cas2;
+         }
+         {
+            long cas3 = INSERTION_COST + EditDistance_NW_RecMemo(c, i, j + 1);
+            if (cas3 < min)
+               min = cas3;
+         }
+         res = min;
+      }
+      c->memo[i][j] = res;
+   }
+   return c->memo[i][j];
+}
+
+long EditDistance_NW_Rec(char *A, size_t lengthA, char *B, size_t lengthB)
+{
+   _init_base_match();
+   struct NW_MemoContext ctx;
+   if (lengthA >= lengthB) /* X is the longest sequence, Y the shortest */
+   {
+      ctx.X = A;
+      ctx.M = lengthA;
+      ctx.Y = B;
+      ctx.N = lengthB;
+   }
+   else
+   {
+      ctx.X = B;
+      ctx.M = lengthB;
+      ctx.Y = A;
+      ctx.N = lengthA;
+   }
+   size_t M = ctx.M;
+   size_t N = ctx.N;
+   { /* Allocation and initialization of ctx.memo to NOT_YET_COMPUTED*/
+      /* Note: memo is of size (N+1)*(M+1) but is stored as (M+1) distinct arrays each with (N+1) continuous elements
+       * It would have been possible to allocate only one big array memezone of (M+1)*(N+1) elements
+       * and then memo as an array of (M+1) pointers, the memo[i] being the address of memzone[i*(N+1)].
+       */
+      ctx.memo = (long **)malloc((M + 1) * sizeof(long *));
+      if (ctx.memo == NULL)
+      {
+         perror("EditDistance_NW_Rec: malloc of ctx_memo");
+         exit(EXIT_FAILURE);
+      }
+      for (int i = 0; i <= M; ++i)
+      {
+         ctx.memo[i] = (long *)malloc((N + 1) * sizeof(long));
+         if (ctx.memo[i] == NULL)
+         {
+            perror("EditDistance_NW_Rec: malloc of ctx_memo[i]");
+            exit(EXIT_FAILURE);
+         }
+         for (int j = 0; j <= N; ++j)
+            ctx.memo[i][j] = NOT_YET_COMPUTED;
+      }
+   }
