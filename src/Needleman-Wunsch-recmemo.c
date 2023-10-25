@@ -265,3 +265,29 @@ long EditDistance_NW_Iter(char *A, size_t lengthA, char *B, size_t lengthB)
 
    return X_next[M];
 }
+
+long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)
+{
+   _init_base_match();
+   struct NW_MemoContext ctx;
+
+   // printf("A = %s", A);
+   // printf("B = %s", B);
+
+   if (lengthA >= lengthB)
+   {
+      ctx.X = A;
+      ctx.M = lengthA;
+      ctx.Y = B;
+      ctx.N = lengthB;
+   }
+   else
+   {
+      ctx.X = B;
+      ctx.M = lengthB;
+      ctx.Y = A;
+      ctx.N = lengthA;
+   }
+   size_t M = ctx.M;
+   size_t N = ctx.N;
+}
