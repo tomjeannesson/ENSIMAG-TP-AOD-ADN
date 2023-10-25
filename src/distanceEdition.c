@@ -56,7 +56,7 @@ EXAMPLE
 #include <sys/stat.h> /* for file length */
 
 #ifdef __PERF_MESURE__
-#include "/matieres/4MMAOD6/2022-10-TP-AOD-ADN-Docs-fournis/tp-ADN-distance/srcperf/perfMesure.c"
+#include "/matieres/4MMAOD6/2023-10-TP-AOD-ADN-Docs-fournis/tp-ADN-distance/srcperf/perfMesure.c"
 #endif
 
 /******************************************************************************/
