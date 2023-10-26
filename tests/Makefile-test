@@ -64,21 +64,21 @@ clean:
 #######################################
 ### Experimentation with valgrind
 
-valgrind4perf1000.output:
+valgrind4perf1000.output: $(A_TESTER) 
 	@echo "Test 4 perf : performance test (extracts from SARS-Cov2 sequences), size= 1000 Bytes"
 	time valgrind --tool=cachegrind --D1=4096,4,64	\
 		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 1000 $(DIRTEST)/wuhan_hu_1.fasta 116 1000  2> valgrind4perf1000.output
 	cat valgrind4perf1000.output
 	@echo "*******************************"
 
-valgrind4perf2000.output:
+valgrind4perf2000.output: $(A_TESTER) 
 	@@echo "Test 4 : performance test (extracts from SARS-Cov2 sequences), size= 2000 Bytes"
 	time valgrind --tool=cachegrind --D1=4096,4,64	\
 		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 2000 $(DIRTEST)/wuhan_hu_1.fasta 116 2000  2> valgrind4perf2000.output
 	cat valgrind4perf2000.output
 	@echo "*******************************"
 
-valgrind4perf10000.output:
+valgrind4perf10000.output: $(A_TESTER) 
 	@echo "Test 4 : performance test (extracts from SARS-Cov2 sequences), size= 10000 Bytes"
 	time valgrind --tool=cachegrind --D1=4096,4,64	\
 		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 10000 $(DIRTEST)/wuhan_hu_1.fasta 116 10000  2> valgrind4perf10000.output

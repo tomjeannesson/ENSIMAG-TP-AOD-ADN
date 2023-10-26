@@ -56,11 +56,11 @@ $(DOCDIR)/index.html: $(SRCDIR)/Doxyfile $(CSOURCE)
 	$(DOCC) $(SRCDIR)/Doxyfile
 
 
-test: $(BINDIR)/distanceEdition $(TESTDIR)/Makefile-test
+test: clean $(BINDIR)/distanceEdition $(TESTDIR)/Makefile-test
 	cd $(TESTDIR) ; make -f Makefile-test all 
 	
-test-valgrind: $(BINDIR)/distanceEdition $(TESTDIR)/Makefile-test
-	make -f $(TESTDIR)/Makefile-test all-valgrind
+test-valgrind: clean $(BINDIR)/distanceEdition $(TESTDIR)/Makefile-test
+	cd $(TESTDIR) ; make -f Makefile-test all-valgrind
 	
 .PHONY: all doc bin report 
 
