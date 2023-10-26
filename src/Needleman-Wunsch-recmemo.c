@@ -337,8 +337,8 @@ long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)
    }
    size_t M = ctx.M;
    size_t N = ctx.N;
+   long * colonne = malloc(ctx.N * sizeof(long));
    long * ligne = malloc(ctx.M * sizeof(long));
-   long * colonne = malloc(ctx.M * sizeof(long));
    // Initialisation de la dernière ligne
    ligne[ctx.M - 1] = 0;
    for (int i = ctx.M - 2; i >= 0; i--)
@@ -346,13 +346,37 @@ long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)
       ligne[i] = 2 * isBase(ctx.X[i]) + ligne[i + 1];
    }
    // Initialisation de la dernière colonne
-   colonne[ctx.M - 1] = 0;
-   for (int i = ctx.M - 2; i >= 0; i--)
+   colonne[ctx.N - 1] = 0;
+   for (int i = ctx.N - 2; i >= 0; i--)
    {
       colonne[i] = 2 * isBase(ctx.Y[i]) + colonne[i + 1];
    }
    // Remplissage du tableau
+   for (int i = ctx.N-2; i>= 0; --i)
+   {
+      for (int j = ctx.M-2; j>= 0; --j)
+      {
+         if (!isBase(ctx.X[j]))
+         {
+            ligne[j] = ligne[j+1];
+         }
+         if (!isBase(ctx.Y[i]))
+         {
+            ligne[j] = ligne[j];
+         }
+         if (isBase(ctx.X[j]) && isBase(ctx.Y[i]))
+         {
+            long diag = (isUnknownBase(ctx.X[j]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[j], ctx.Y[i]) ? 0 : SUBSTITUTION_COST)) + ligne[j+1];
+            long left = INSERTION_COST + ligne[j];
+            long top = INSERTION_COST + colonne[i];
+            ligne[j] = min(diag, left, top);
+         }
    
+         
+      }
+        
+
+   }
 
 
 }
