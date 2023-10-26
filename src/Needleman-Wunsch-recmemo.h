@@ -51,3 +51,4 @@ long EditDistance_NW_Rec(char *A, size_t lengthA, char *B, size_t lengthB);
 long EditDistance_NW_Iter(char *A, size_t lengthA, char *B, size_t lengthB);
 long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB);
 long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB);
+long test_calcul_bloc(char *A, size_t lengthA, char *B, size_t lengthB);

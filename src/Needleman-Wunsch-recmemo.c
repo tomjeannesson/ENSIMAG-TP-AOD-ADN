@@ -329,7 +329,6 @@ long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
 
    return Y_col[0];
 }
-
 long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)
 {
    _init_base_match();
@@ -354,40 +353,179 @@ long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)
    }
    size_t M = ctx.M;
    size_t N = ctx.N;
-   long *colonne = malloc(ctx.N * sizeof(long));
-   long *ligne = malloc(ctx.M * sizeof(long));
-   // Initialisation de la dernière ligne
-   ligne[ctx.M - 1] = 0;
-   for (int i = ctx.M - 2; i >= 0; i--)
-   {
-      ligne[i] = 2 * isBase(ctx.X[i]) + ligne[i + 1];
-   }
+   long *colonne = malloc((ctx.N + 1) * sizeof(long));
+
    // Initialisation de la dernière colonne
-   colonne[ctx.N - 1] = 0;
-   for (int i = ctx.N - 2; i >= 0; i--)
+   colonne[ctx.N] = 0;
+   for (int i = ctx.N - 1; i >= 0; i--)
    {
       colonne[i] = 2 * isBase(ctx.Y[i]) + colonne[i + 1];
    }
+   long top, right, diag;
    // Remplissage du tableau
-   for (int i = ctx.N - 2; i >= 0; --i)
+   for (int x = ctx.M - 1; x >= 0; x--)
    {
-      for (int j = ctx.M - 2; j >= 0; --j)
+      for (int y = ctx.N; y >= 0; y--)
       {
-         if (!isBase(ctx.X[j]))
+
+         if (y == ctx.N)
          {
-            ligne[j] = ligne[j + 1];
+            diag = colonne[y];
+            colonne[y] = (isBase(ctx.X[x]) ? INSERTION_COST : 0) + colonne[y];
          }
-         if (!isBase(ctx.Y[i]))
+         else
          {
-            ligne[j] = ligne[j];
-         }
-         if (isBase(ctx.X[j]) && isBase(ctx.Y[i]))
-         {
-            long diag = (isUnknownBase(ctx.X[j]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[j], ctx.Y[i]) ? 0 : SUBSTITUTION_COST)) + ligne[j + 1];
-            long left = INSERTION_COST + ligne[j];
-            long top = INSERTION_COST + colonne[i];
-            ligne[j] = min(diag, left, top);
+
+            if (!isBase(ctx.X[x]))
+            {
+               diag = colonne[y];
+               ManageBaseError(ctx.X[x]);
+            }
+            else if (!isBase(ctx.Y[y]))
+            {
+               diag = colonne[y];
+               colonne[y] = colonne[y + 1];
+               ManageBaseError(ctx.Y[y]);
+            }
+            else
+            {
+               long val_diag = (isUnknownBase(ctx.X[x]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[x], ctx.Y[y]) ? 0 : SUBSTITUTION_COST)) + diag;
+               long left = INSERTION_COST + colonne[y + 1];
+               long top = INSERTION_COST + colonne[y];
+               diag = colonne[y];
+               colonne[y] = min(val_diag, left, top);
+            }
          }
       }
+      // On affiche la colonne
+      for (int i = 0; i < ctx.N + 1; i++)
+      {
+         printf("%.2ld ", colonne[i]);
+      }
+      printf("\n");
    }
+   return colonne[0];
+}
+
+void calcul_bloc(long *Y_col, long *X_little_row, int deb_x, int deb_y, int K_x, int K_y, struct NW_MemoContext ctx)
+{
+   long diag = 0;
+
+   // Y_col et X_little_row pas encore calculé
+   if ((Y_col[deb_y] == -1) && (X_little_row[deb_x] == -1))
+   {
+
+      Y_col[deb_y] = 0;
+      diag = 0;
+      X_little_row[deb_x] = 0;
+
+      for (int y = deb_y - 1; (y >= deb_y - K_y) && (y >= 0); y--)
+      {
+         Y_col[y] = (isBase(ctx.Y[y]) ? INSERTION_COST : 0) + Y_col[y + 1];
+      }
+
+      for (int x = deb_x - 1; (x >= deb_x - K_x) && (x >= 0); x--)
+      {
+         X_little_row[x] = (isBase(ctx.X[x]) ? INSERTION_COST : 0) + X_little_row[x + 1];
+      }
+
+
+   }
+
+
+   // Y_col pas encore calculé
+   if (Y_col[deb_y] == -1)
+   {
+      Y_col[deb_y] = X_little_row[deb_x] + (isBase(ctx.Y[deb_y]) ? INSERTION_COST : 0);
+      diag = Y_col[deb_y];
+      for (int y = deb_y - 1; (y >= deb_y - K_y) && (y >= 0); y--)
+      {
+         Y_col[y] = (isBase(ctx.Y[y]) ? INSERTION_COST : 0) + Y_col[y + 1];
+      }
+   }
+   // X_little_row pas encore calculé
+   if (X_little_row[deb_x] == -1)
+   {
+      X_little_row[deb_x] = Y_col[deb_y] + (isBase(ctx.X[deb_x]) ? INSERTION_COST : 0);
+      diag = X_little_row[deb_x];
+      for (int x = deb_x - 1; (x >= deb_x - K_x) && (x >= 0); x--)
+      {
+         X_little_row[x] = (isBase(ctx.X[x]) ? INSERTION_COST : 0) + X_little_row[x + 1];
+      }
+   }
+   // Y_col et X_little_row calculé
+   for (int x = deb_x; (x >= deb_x - K_x) && (x >= 0); x--)
+   {
+      for (int y = deb_y; (y >= deb_y - K_y) && (y >= 0); y--)
+      {
+
+         if (!isBase(ctx.X[x]))
+         {
+            diag = Y_col[y];
+            ManageBaseError(ctx.X[x]);
+         }
+         else if (!isBase(ctx.Y[y]))
+         {
+            diag = Y_col[y];
+            Y_col[y] = Y_col[y + 1];
+            ManageBaseError(ctx.Y[y]);
+         }
+         else
+         {
+
+            long val_diag = (isUnknownBase(ctx.X[x]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[x], ctx.Y[y]) ? 0 : SUBSTITUTION_COST)) + diag;
+            long right = INSERTION_COST + Y_col[y];
+            long top = INSERTION_COST + Y_col[y + 1];
+            diag = Y_col[y];
+            Y_col[y] = min(val_diag, right, top);
+         }
+         X_little_row[x] = Y_col[y];
+      }
+      // On affiche la colonne
+      // for (int i = 0; i < ctx.N + 1; i++)
+      // {
+      //    printf("%.2ld ", Y_col[i]);
+      // }
+      // printf("\n");
+   }
+}
+
+long test_calcul_bloc(char *A, size_t lengthA, char *B, size_t lengthB)
+{
+   _init_base_match();
+   struct NW_MemoContext ctx;
+
+   // printf("A = %s", A);
+   // printf("B = %s", B);
+
+   if (lengthA >= lengthB)
+   {
+      ctx.X = A;
+      ctx.M = lengthA;
+      ctx.Y = B;
+      ctx.N = lengthB;
+   }
+   else
+   {
+      ctx.X = B;
+      ctx.M = lengthB;
+      ctx.Y = A;
+      ctx.N = lengthA;
+   }
+   size_t M = ctx.M;
+   size_t N = ctx.N;
+   long *colonne = malloc((ctx.N + 1) * sizeof(long));
+   long *ligne = malloc((ctx.M + 1) * sizeof(long));
+   for (int i = 0; i < (ctx.N + 1); i++)
+   {
+      colonne[i] = -1;
+   }
+   for (int i = 0; i < (ctx.M + 1); i++)
+   {
+      ligne[i] = -1;
+   }
+
+   calcul_bloc(colonne, ligne, ctx.M, ctx.N, ctx.M + 1, ctx.N + 1, ctx);
+
+   return colonne[0];
 }
