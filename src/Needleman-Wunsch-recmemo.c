@@ -231,7 +231,6 @@ long EditDistance_NW_Iter(char *A, size_t lengthA, char *B, size_t lengthB)
    {
       for (int row = N; row >= 0; row--)
       {
-         // printf("row=%ld, col=%ld\n", row, col);
          if (row == N)
          {
             prev_value = Y_col[row];
@@ -256,12 +255,11 @@ long EditDistance_NW_Iter(char *A, size_t lengthA, char *B, size_t lengthB)
             prev_value = Y_col[row];
             Y_col[row] = min(diag, right, top);
          }
-         // print_array(Y_col, N + 1);
       }
    }
+   long res = Y_col[0];
    free(Y_col);
-
-   return Y_col[0];
+   return res;
 }
 
 long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
@@ -388,11 +386,156 @@ long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
          }
       }
    }
+   long res = Y_col[0];
    free(Y_col);
    free(Z_row);
-   return Y_col[0];
+   return res;
 }
 
+long CO_BREAKPOINT = 10;
+
+long CalculateBlock_CO(struct NW_MemoContext ctx, long *Z_row, long Z_start, long Z_end, long *Y_col, long Y_start, long Y_end)
+{
+   long prev_value_y;
+   long prev_value_z;
+   long value_to_keep;
+   long diag;
+   long left;
+   long top;
+   // printf("Z_start = %ld, Z_end = %ld, Y_start = %ld, Y_end = %ld\n", Z_start, Z_end, Y_start, Y_end);
+   // print_array(Z_row, ctx.M + 1);
+   // print_array(Y_col, ctx.N + 1);
+
+   if (Z_end - Z_start > CO_BREAKPOINT)
+   {
+      CalculateBlock_CO(ctx, Z_row, Z_start + (Z_end - Z_start) / 2 + 1, Z_end, Y_col, Y_start, Y_end);
+      CalculateBlock_CO(ctx, Z_row, Z_start, Z_start + (Z_end - Z_start) / 2, Y_col, Y_start, Y_end);
+   }
+   else if (Y_end - Y_start > CO_BREAKPOINT)
+   {
+      CalculateBlock_CO(ctx, Z_row, Z_start, Z_end, Y_col, Y_start + (Y_end - Y_start) / 2 + 1, Y_end);
+      CalculateBlock_CO(ctx, Z_row, Z_start, Z_end, Y_col, Y_start, Y_start + (Y_end - Y_start) / 2);
+   }
+   else
+   {
+
+      for (int col = Z_end; col >= Z_start; col--)
+      {
+         for (int row = Y_end; row >= Y_start; row--)
+         {
+            if (row == ctx.N)
+            {
+               prev_value_y = Y_col[row];
+               Y_col[row] = (isBase(ctx.X[col]) ? INSERTION_COST : 0) + Y_col[row];
+            }
+            else if (!isBase(ctx.X[col]))
+            {
+               prev_value_y = Y_col[row];
+               ManageBaseError(ctx.X[col]);
+            }
+            else if (!isBase(ctx.Y[row]))
+            {
+               prev_value_y = Y_col[row];
+               if (row == Y_end)
+               {
+                  Y_col[row] = Z_row[col];
+               }
+               else
+               {
+                  Y_col[row] = Y_col[row + 1];
+               }
+               ManageBaseError(ctx.Y[row]);
+            }
+            else
+            {
+               if (row == Y_end)
+               {
+                  if (col == Z_end)
+                  {
+
+                     diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + Z_row[col + 1];
+                  }
+                  else
+                  {
+                     diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_value_z;
+                  }
+                  left = INSERTION_COST + Y_col[row];
+                  top = INSERTION_COST + Z_row[col];
+               }
+               else
+               {
+                  diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_value_y;
+                  left = INSERTION_COST + Y_col[row];
+                  top = INSERTION_COST + Y_col[row + 1];
+               }
+               // printf("diag = %ld, left = %ld, top = %ld\n", diag, left, top);
+               prev_value_y = Y_col[row];
+               Y_col[row] = min(diag, left, top);
+            }
+            value_to_keep = Y_col[row];
+            // print_array(Y_col, ctx.N + 1);
+            // print_array(Z_row, ctx.M + 1);
+         }
+         prev_value_z = Z_row[col];
+         Z_row[col] = value_to_keep;
+         if (col == Z_end)
+         {
+            Z_row[Z_end + 1] = prev_value_y;
+         }
+      }
+   }
+}
+
+long EditDistance_NW_Iter_CO(char *A, size_t lengthA, char *B, size_t lengthB)
+{
+   _init_base_match();
+   struct NW_MemoContext ctx;
+
+   if (lengthA >= lengthB)
+   {
+      ctx.X = A;
+      ctx.M = lengthA;
+      ctx.Y = B;
+      ctx.N = lengthB;
+   }
+   else
+   {
+      ctx.X = B;
+      ctx.M = lengthB;
+      ctx.Y = A;
+      ctx.N = lengthA;
+   }
+   size_t M = ctx.M;
+   size_t N = ctx.N;
+
+   long *Y_col = (long *)malloc((N + 1) * sizeof(long));
+   if (Y_col == NULL)
+   {
+      perror("EditDistance_NW_Iter: malloc of Y_col. You must have at least one!");
+      exit(EXIT_FAILURE);
+   }
+   Y_col[N] = 0;
+   for (int row = N - 1; row >= 0; row--)
+   {
+      Y_col[row] = (isBase(ctx.Y[row]) ? INSERTION_COST : 0) + Y_col[row + 1];
+   }
+
+   long *Z_row = (long *)malloc((M + 1) * sizeof(long));
+   Z_row[M] = 0;
+   for (int row = M - 1; row >= 0; row--)
+   {
+      Z_row[row] = (isBase(ctx.X[row]) ? INSERTION_COST : 0) + Z_row[row + 1];
+   }
+
+   CalculateBlock_CO(ctx, Z_row, 0, M - 1, Y_col, 0, N);
+   // print_array(Z_row, M + 1);
+   // print_array(Y_col, N + 1);
+
+   long res = Y_col[0];
+   free(Y_col);
+   free(Z_row);
+   return res;
+}
 long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)
 {
    _init_base_match();
