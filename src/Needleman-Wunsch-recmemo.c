@@ -298,9 +298,9 @@ long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
       Y_col[row] = (isBase(ctx.Y[row]) ? INSERTION_COST : 0) + Y_col[row + 1];
    }
    long prev_value;
-   long Z = 4096 / 2;
-   long number_of_Z_rows = (N) / Z + 1;
-   long number_of_Z_cols = (M) / Z + 1;
+   long Z = 100;
+   long number_of_Z_rows = N / Z + 1;
+   long number_of_Z_cols = M / Z + 1;
    long Z_row_length = Z > M ? M : Z;
    long *Z_row = (long *)malloc((Z_row_length + 1) * sizeof(long));
    long prev_z;
@@ -355,62 +355,36 @@ long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
                      long diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_value;
                      long top = INSERTION_COST + Y_col[row + 1];
                      long right = INSERTION_COST + Y_col[row];
-                     // printf("row=%ld, col=%ld, z_row=%ld, z_col=%ld, counter_row=%ld, counter_col=%ld\n", row, col, z_row, z_col, counter_row, counter_col);
-                     // printf("prev_value=%ld\n", prev_value);
-                     // printf("NORMAL diag=%ld, top=%ld, right=%ld\n", diag, top, right);
                      prev_value = Y_col[row];
                      Y_col[row] = min(diag, right, top);
-                     // print_array(Y_col, N + 1);
                   }
                   else
                   {
-                     // print_array(Z_row, Z_row_length + 1);
-                     // print_array(Y_col, N + 1);
                      long diag;
                      if (counter_col == max_cols - 1)
                      {
 
                         diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + Z_row[counter_col + Z_row_length - max_cols + 1];
-                        // printf("\nZ_row[%ld]=%ld\n", counter_col + Z_row_length - max_cols + 1, Z_row[counter_col + Z_row_length - max_cols + 1]);
                      }
                      else
                      {
                         diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_z;
-                        // printf("\nprev_z=%ld\n", prev_z);
                      }
 
                      long top = INSERTION_COST + Z_row[counter_col + Z_row_length - max_cols];
                      long right = INSERTION_COST + Y_col[row];
-                     // printf("Z ROW diag=%ld, top=%ld, right=%ld\n", diag, top, right);
-                     // print_array(Z_row, Z_row_length + 1);
                      prev_value = Y_col[row];
-                     // printf("ctx.X[%ld]=%c, ctx.Y[%ld]=%c\n", col, ctx.X[col], row, ctx.Y[row]);
-                     // printf("Y_col[row]=%ld\n", prev_value);
-                     // printf("counter_col=%ld, counter_row=%ld, z_row_val=%ld\n", counter_col, counter_row, Z_row[counter_col]);
-                     // print_array(Z_row, Z_row_length + 1);
                      Y_col[row] = min(diag, right, top);
-                     // print_array(Y_col, N + 1);
-                     // printf("\n");
                   }
-                  // print_array(Z_row, Z_row_length + 1);
                }
                value_to_keep = Y_col[row];
             }
-            // print_array(Y_col, N + 1);
-            // printf("value_to_keep = %ld, prev=%ld\n", value_to_keep, prev_value);
             prev_z = Z_row[counter_col + Z_row_length - max_cols];
-            // printf("prev_z=%ld\n", prev_z);
             Z_row[counter_col + Z_row_length - max_cols] = value_to_keep;
             if (counter_col == max_cols - 1)
             {
-               // printf("\nput prev_value=%ld in Z_row[%ld]\n\n", prev_value, counter_col + 1);
                Z_row[Z_row_length] = prev_value;
             }
-            // printf("put value_to_keep=%ld in Z_row[%ld]\n", value_to_keep, counter_col);
-            // printf("\n");
-            // print_array(Y_col, N + 1);
-            // printf("z_row=%d, z_col=%d\n", z_row, z_col);
-            // print_array(Z_row, Z_row_length + 1);
          }
       }
    }
