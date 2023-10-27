@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include <string.h> /* for strchr */
 // #include <ctype.h> /* for toupper */
-
 #include "characters_to_base.h" /* mapping from char to base */
 
 /*****************************************************************************/
@@ -163,9 +162,17 @@ void print_array(long *array, size_t length)
    printf("[");
    for (int i = 0; i < length; i++)
    {
-      printf("%ld, ", array[i]);
+      if (i == length - 1)
+      {
+         printf("%ld", array[i]);
+      }
+      else
+      {
+
+         printf("%ld, ", array[i]);
+      }
    }
-   printf("]\n");
+   printf("] len(%ld)\n", length);
 }
 
 long min(long a, long b, long c)
@@ -224,6 +231,7 @@ long EditDistance_NW_Iter(char *A, size_t lengthA, char *B, size_t lengthB)
    {
       for (int row = N; row >= 0; row--)
       {
+         // printf("row=%ld, col=%ld\n", row, col);
          if (row == N)
          {
             prev_value = Y_col[row];
@@ -248,8 +256,10 @@ long EditDistance_NW_Iter(char *A, size_t lengthA, char *B, size_t lengthB)
             prev_value = Y_col[row];
             Y_col[row] = min(diag, right, top);
          }
+         // print_array(Y_col, N + 1);
       }
    }
+   free(Y_col);
 
    return Y_col[0];
 }
@@ -276,57 +286,136 @@ long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
    size_t M = ctx.M;
    size_t N = ctx.N;
 
-   long Y_col_size = N + 1 > 4096 ? 4096 : N + 1;
-   // long Y_col_size = 4096;
-
-   long *Y_col = (long *)malloc(Y_col_size * sizeof(long));
+   long *Y_col = (long *)malloc((N + 1) * sizeof(long));
    if (Y_col == NULL)
    {
       perror("EditDistance_NW_Iter: malloc of Y_col. You must have at least one!");
       exit(EXIT_FAILURE);
    }
    Y_col[N] = 0;
-   for (int row = N + 1; row >= N + 1 - Y_col_size; row--)
+   for (int row = N - 1; row >= 0; row--)
    {
       Y_col[row] = (isBase(ctx.Y[row]) ? INSERTION_COST : 0) + Y_col[row + 1];
    }
-
    long prev_value;
+   long Z = 4096 / 2;
+   long number_of_Z_rows = (N) / Z + 1;
+   long number_of_Z_cols = (M) / Z + 1;
+   long Z_row_length = Z > M ? M : Z;
+   long *Z_row = (long *)malloc((Z_row_length + 1) * sizeof(long));
+   long prev_z;
 
-   for (int col = M - 1; col >= 0; col--)
+   for (int z_col = number_of_Z_cols - 1; z_col >= 0; z_col--)
    {
-      for (int row = N; row >= 0; row--)
+      long max_cols = M - (number_of_Z_cols - 1 - z_col) * Z > Z ? Z : M - (number_of_Z_cols - 1 - z_col) * Z;
+      for (int z_row = number_of_Z_rows - 1; z_row >= 0; z_row--)
       {
-         if (row % Y_col_size == 0)
+         long max_rows = N - (number_of_Z_rows - 1 - z_row) * Z > Z ? Z : N - (number_of_Z_rows - 1 - z_row) * Z;
+         if (z_row != number_of_Z_rows - 1)
          {
+            max_rows--;
          }
-         if (row == N)
+         for (int counter_col = max_cols - 1; counter_col >= 0; counter_col--)
          {
-            prev_value = Y_col[row];
-            Y_col[row] = (isBase(ctx.X[col]) ? INSERTION_COST : 0) + Y_col[row];
-         }
-         else if (!isBase(ctx.X[col]))
-         {
-            prev_value = Y_col[row];
-            ManageBaseError(ctx.X[col]);
-         }
-         else if (!isBase(ctx.Y[row]))
-         {
-            prev_value = Y_col[row];
-            Y_col[row] = Y_col[row + 1];
-            ManageBaseError(ctx.Y[row]);
-         }
-         else
-         {
-            long diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_value;
-            long left = INSERTION_COST + Y_col[row + 1];
-            long top = INSERTION_COST + Y_col[row];
-            prev_value = Y_col[row];
-            Y_col[row] = min(diag, left, top);
+            long col = z_col > 0 ? counter_col + (z_col - 1) * Z + M - (number_of_Z_cols - 1) * Z : counter_col;
+            long value_to_keep;
+            for (int counter_row = max_rows; counter_row >= 0; counter_row--)
+            {
+               long row = z_row > 0 ? counter_row + (z_row - 1) * Z + N - (number_of_Z_rows - 1) * Z : counter_row;
+
+               if (row == N)
+               {
+                  prev_value = Y_col[row];
+                  Y_col[row] = (isBase(ctx.X[col]) ? INSERTION_COST : 0) + Y_col[row];
+               }
+               else if (!isBase(ctx.X[col]))
+               {
+                  prev_value = Y_col[row];
+                  ManageBaseError(ctx.X[col]);
+               }
+               else if (!isBase(ctx.Y[row]))
+               {
+                  prev_value = Y_col[row];
+                  if (counter_row == max_rows)
+                  {
+                     Y_col[row] = Z_row[counter_col + Z_row_length - max_cols];
+                  }
+                  else
+                  {
+
+                     Y_col[row] = Y_col[row + 1];
+                  }
+                  ManageBaseError(ctx.Y[row]);
+               }
+               else
+               {
+                  if (z_row == number_of_Z_rows - 1 || counter_row != max_rows)
+                  {
+
+                     long diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_value;
+                     long top = INSERTION_COST + Y_col[row + 1];
+                     long right = INSERTION_COST + Y_col[row];
+                     // printf("row=%ld, col=%ld, z_row=%ld, z_col=%ld, counter_row=%ld, counter_col=%ld\n", row, col, z_row, z_col, counter_row, counter_col);
+                     // printf("prev_value=%ld\n", prev_value);
+                     // printf("NORMAL diag=%ld, top=%ld, right=%ld\n", diag, top, right);
+                     prev_value = Y_col[row];
+                     Y_col[row] = min(diag, right, top);
+                     // print_array(Y_col, N + 1);
+                  }
+                  else
+                  {
+                     // print_array(Z_row, Z_row_length + 1);
+                     // print_array(Y_col, N + 1);
+                     long diag;
+                     if (counter_col == max_cols - 1)
+                     {
+
+                        diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + Z_row[counter_col + Z_row_length - max_cols + 1];
+                        // printf("\nZ_row[%ld]=%ld\n", counter_col + Z_row_length - max_cols + 1, Z_row[counter_col + Z_row_length - max_cols + 1]);
+                     }
+                     else
+                     {
+                        diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_z;
+                        // printf("\nprev_z=%ld\n", prev_z);
+                     }
+
+                     long top = INSERTION_COST + Z_row[counter_col + Z_row_length - max_cols];
+                     long right = INSERTION_COST + Y_col[row];
+                     // printf("Z ROW diag=%ld, top=%ld, right=%ld\n", diag, top, right);
+                     // print_array(Z_row, Z_row_length + 1);
+                     prev_value = Y_col[row];
+                     // printf("ctx.X[%ld]=%c, ctx.Y[%ld]=%c\n", col, ctx.X[col], row, ctx.Y[row]);
+                     // printf("Y_col[row]=%ld\n", prev_value);
+                     // printf("counter_col=%ld, counter_row=%ld, z_row_val=%ld\n", counter_col, counter_row, Z_row[counter_col]);
+                     // print_array(Z_row, Z_row_length + 1);
+                     Y_col[row] = min(diag, right, top);
+                     // print_array(Y_col, N + 1);
+                     // printf("\n");
+                  }
+                  // print_array(Z_row, Z_row_length + 1);
+               }
+               value_to_keep = Y_col[row];
+            }
+            // print_array(Y_col, N + 1);
+            // printf("value_to_keep = %ld, prev=%ld\n", value_to_keep, prev_value);
+            prev_z = Z_row[counter_col + Z_row_length - max_cols];
+            // printf("prev_z=%ld\n", prev_z);
+            Z_row[counter_col + Z_row_length - max_cols] = value_to_keep;
+            if (counter_col == max_cols - 1)
+            {
+               // printf("\nput prev_value=%ld in Z_row[%ld]\n\n", prev_value, counter_col + 1);
+               Z_row[Z_row_length] = prev_value;
+            }
+            // printf("put value_to_keep=%ld in Z_row[%ld]\n", value_to_keep, counter_col);
+            // printf("\n");
+            // print_array(Y_col, N + 1);
+            // printf("z_row=%d, z_col=%d\n", z_row, z_col);
+            // print_array(Z_row, Z_row_length + 1);
          }
       }
    }
-
+   free(Y_col);
+   free(Z_row);
    return Y_col[0];
 }
 long EditDistance_NW_Iter_A(char *A, size_t lengthA, char *B, size_t lengthB)

@@ -7,6 +7,7 @@
  */
 
 #include <stdlib.h> /* for size_t */
+#include <math.h>
 
 /*
  * Costs for operations on canonical bases

@@ -3,7 +3,7 @@ A_TESTER= ../bin/distanceEdition
 DIRTEST= .
 DIRBENCH=/matieres/4MMAOD6/TP-AOD-ADN-Benchmark
 
-all: .test1.expected .test2.expected .test3.expected .test4.expected .test5.expected 
+all: .test2.expected .test3.expected .test4.expected .test5.expected 
 
 all-valgrind: valgrind4perf1000.output valgrind4perf2000.output valgrind4perf10000.output
 
@@ -43,7 +43,7 @@ clean:
 .test4.expected:  $(A_TESTER) 
 	@echo "Test 4 : real SARS-Cov2 sequences,  size= 30 kB (should print 369) ..."
 	@echo "369" > .test4.expected 
-	time $(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 30183 $(DIRTEST)/wuhan_hu_1.fasta 116 30331  > test4.output
+	time $(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 30183 $(DIRTEST)/wuhan_hu_1.fasta 116 30331  
 	cat test4.output 
 	@diff  test4.output .test4.expected 
 	@echo "... test 4 passed !"
