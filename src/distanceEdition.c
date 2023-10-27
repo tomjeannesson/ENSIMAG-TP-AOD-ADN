@@ -54,6 +54,7 @@ EXAMPLE
 #include <unistd.h>   /* for close */
 #include <sys/mman.h> /* for mmap and munmap */
 #include <sys/stat.h> /* for file length */
+#include <math.h>
 
 #ifdef __PERF_MESURE__
 #include "/matieres/4MMAOD6/2023-10-TP-AOD-ADN-Docs-fournis/tp-ADN-distance/srcperf/perfMesure.c"
