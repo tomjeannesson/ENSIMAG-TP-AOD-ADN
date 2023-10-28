@@ -53,12 +53,6 @@ clean:
 	# echo "Killed" > .test5.expected 
 	echo "Core 0"
 	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
-	echo "Core 1"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:1/energy_uj
-	echo "Core 2"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:2/energy_uj
-	echo "Core 3"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:3/energy_uj
 	time $(A_TESTER)  \
 		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 10000 \
 		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 10000 \
@@ -66,12 +60,6 @@ clean:
 	cat test5.10000.output 
 	echo "Core 0"
 	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
-	echo "Core 1"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:1/energy_uj
-	echo "Core 2"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:2/energy_uj
-	echo "Core 3"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:3/energy_uj
 	time $(A_TESTER)  \
 		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 20000 \
 		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 20000 \
@@ -79,12 +67,6 @@ clean:
 	cat test5.20000.output 
 	echo "Core 0"
 	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
-	echo "Core 1"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:1/energy_uj
-	echo "Core 2"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:2/energy_uj
-	echo "Core 3"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:3/energy_uj
 	time $(A_TESTER)  \
 		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 30000 \
 		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 30000 \
@@ -92,12 +74,6 @@ clean:
 	cat test5.30000.output 
 	echo "Core 0"
 	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
-	echo "Core 1"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:1/energy_uj
-	echo "Core 2"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:2/energy_uj
-	echo "Core 3"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:3/energy_uj
 	time $(A_TESTER)  \
 		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 40000 \
 		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 40000 \
@@ -105,12 +81,6 @@ clean:
 	cat test5.40000.output 
 	echo "Core 0"
 	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
-	echo "Core 1"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:1/energy_uj
-	echo "Core 2"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:2/energy_uj
-	echo "Core 3"
-	cat /sys/class/powercap/intel-rapl/intel-rapl:3/energy_uj
 
 	# diff  test5.output .test5.expected 
 	@echo "... test 5 passed (but result not checked)"
