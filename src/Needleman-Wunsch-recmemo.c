@@ -302,24 +302,30 @@ long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
    long Z_row_length = Z > M ? M : Z;
    long *Z_row = (long *)malloc((Z_row_length + 1) * sizeof(long));
    long prev_z;
-
+   long diag;
+   long right;
+   long top;
+   long max_rows;
+   long max_cols;
+   long value_to_keep;
+   long col;
+   long row;
    for (int z_col = number_of_Z_cols - 1; z_col >= 0; z_col--)
    {
-      long max_cols = M - (number_of_Z_cols - 1 - z_col) * Z > Z ? Z : M - (number_of_Z_cols - 1 - z_col) * Z;
+      max_cols = M - (number_of_Z_cols - 1 - z_col) * Z > Z ? Z : M - (number_of_Z_cols - 1 - z_col) * Z;
       for (int z_row = number_of_Z_rows - 1; z_row >= 0; z_row--)
       {
-         long max_rows = N - (number_of_Z_rows - 1 - z_row) * Z > Z ? Z : N - (number_of_Z_rows - 1 - z_row) * Z;
+         max_rows = N - (number_of_Z_rows - 1 - z_row) * Z > Z ? Z : N - (number_of_Z_rows - 1 - z_row) * Z;
          if (z_row != number_of_Z_rows - 1)
          {
             max_rows--;
          }
          for (int counter_col = max_cols - 1; counter_col >= 0; counter_col--)
          {
-            long col = z_col > 0 ? counter_col + (z_col - 1) * Z + M - (number_of_Z_cols - 1) * Z : counter_col;
-            long value_to_keep;
+            col = z_col > 0 ? counter_col + (z_col - 1) * Z + M - (number_of_Z_cols - 1) * Z : counter_col;
             for (int counter_row = max_rows; counter_row >= 0; counter_row--)
             {
-               long row = z_row > 0 ? counter_row + (z_row - 1) * Z + N - (number_of_Z_rows - 1) * Z : counter_row;
+               row = z_row > 0 ? counter_row + (z_row - 1) * Z + N - (number_of_Z_rows - 1) * Z : counter_row;
 
                if (row == N)
                {
@@ -350,15 +356,15 @@ long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
                   if (z_row == number_of_Z_rows - 1 || counter_row != max_rows)
                   {
 
-                     long diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_value;
-                     long top = INSERTION_COST + Y_col[row + 1];
-                     long right = INSERTION_COST + Y_col[row];
+                     diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_value;
+                     top = INSERTION_COST + Y_col[row + 1];
+                     right = INSERTION_COST + Y_col[row];
                      prev_value = Y_col[row];
                      Y_col[row] = min(diag, right, top);
                   }
                   else
                   {
-                     long diag;
+                     diag;
                      if (counter_col == max_cols - 1)
                      {
 
@@ -369,8 +375,8 @@ long EditDistance_NW_Iter_CA(char *A, size_t lengthA, char *B, size_t lengthB)
                         diag = (isUnknownBase(ctx.X[col]) ? SUBSTITUTION_UNKNOWN_COST : (isSameBase(ctx.X[col], ctx.Y[row]) ? 0 : SUBSTITUTION_COST)) + prev_z;
                      }
 
-                     long top = INSERTION_COST + Z_row[counter_col + Z_row_length - max_cols];
-                     long right = INSERTION_COST + Y_col[row];
+                     top = INSERTION_COST + Z_row[counter_col + Z_row_length - max_cols];
+                     right = INSERTION_COST + Y_col[row];
                      prev_value = Y_col[row];
                      Y_col[row] = min(diag, right, top);
                   }
