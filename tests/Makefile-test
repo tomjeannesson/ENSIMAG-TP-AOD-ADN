@@ -3,10 +3,9 @@ A_TESTER= ../bin/distanceEdition
 DIRTEST= .
 DIRBENCH=/matieres/4MMAOD6/TP-AOD-ADN-Benchmark
 
-all: .test2.expected .test3.expected .test4.expected .test5.expected 
+all: .test1.expected .test2.expected .test3.expected .test4.expected .test5.expected
 
-all-valgrind: valgrind4perf1000.output valgrind4perf2000.output valgrind4perf10000.output
-
+all-valgrind: valgrind4perf1000.output valgrind4perf10002000.output valgrind4perf10004000.output valgrind4perf2000.output valgrind4perf4000.output valgrind4perf6000.output valgrind4perf8000.output 
 clean: 
 
 
@@ -52,17 +51,53 @@ clean:
 .test5.expected:  $(A_TESTER) 
 	@echo "Test 5 : real sequences (Arabidopsis thaliana), size= 20 MBs (should print Killed or an error message) ..."
 	# echo "Killed" > .test5.expected 
-	$(A_TESTER)  \
-		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 20236404 \
-		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 19944517 \
-		> test5.output 
-	cat test5.output 
+	echo "Core 0"
+	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
+	time $(A_TESTER)  \
+		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 10000 \
+		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 10000 \
+		> test5.10000.output 
+	cat test5.10000.output 
+	echo "Core 0"
+	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
+	time $(A_TESTER)  \
+		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 20000 \
+		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 20000 \
+		> test5.20000.output 
+	cat test5.20000.output 
+	echo "Core 0"
+	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
+	time $(A_TESTER)  \
+		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 30000 \
+		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 30000 \
+		> test5.30000.output 
+	cat test5.30000.output 
+	echo "Core 0"
+	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
+	time $(A_TESTER)  \
+		$(DIRBENCH)/GCA_024498555.1_ASM2449855v1_genomic.fna 77328790 40000 \
+		$(DIRBENCH)/GCF_000001735.4_TAIR10.1_genomic.fna 30808129 40000 \
+		> test5.40000.output 
+	cat test5.40000.output 
+	echo "Core 0"
+	cat /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj
+
 	# diff  test5.output .test5.expected 
 	@echo "... test 5 passed (but result not checked)"
 	@echo "*******************************"
 
 #######################################
 ### Experimentation with valgrind
+
+valgrind4perf.output: $(A_TESTER) 
+	@echo "Test 4 perf : performance test (extracts from SARS-Cov2 sequences)"
+	time valgrind --tool=cachegrind --D1=4096,4,64	\
+		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 4000 $(DIRTEST)/wuhan_hu_1.fasta 116 4000  2> valgrind4perf.output
+	cat valgrind4perf.output
+	@echo "*******************************"
+
+
+
 
 valgrind4perf1000.output: $(A_TESTER) 
 	@echo "Test 4 perf : performance test (extracts from SARS-Cov2 sequences), size= 1000 Bytes"
@@ -76,6 +111,41 @@ valgrind4perf2000.output: $(A_TESTER)
 	time valgrind --tool=cachegrind --D1=4096,4,64	\
 		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 2000 $(DIRTEST)/wuhan_hu_1.fasta 116 2000  2> valgrind4perf2000.output
 	cat valgrind4perf2000.output
+	@echo "*******************************"
+
+valgrind4perf4000.output: $(A_TESTER) 
+	@@echo "Test 4 : performance test (extracts from SARS-Cov2 sequences), size= 4000 Bytes"
+	time valgrind --tool=cachegrind --D1=4096,4,64	\
+		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 4000 $(DIRTEST)/wuhan_hu_1.fasta 116 4000  2> valgrind4perf4000.output
+	cat valgrind4perf4000.output
+	@echo "*******************************"
+
+valgrind4perf6000.output: $(A_TESTER) 
+	@@echo "Test 4 : performance test (extracts from SARS-Cov2 sequences), size= 6000 Bytes"
+	time valgrind --tool=cachegrind --D1=4096,4,64	\
+		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 6000 $(DIRTEST)/wuhan_hu_1.fasta 116 6000  2> valgrind4perf6000.output
+	cat valgrind4perf6000.output
+	@echo "*******************************"
+
+valgrind4perf8000.output: $(A_TESTER) 
+	@@echo "Test 4 : performance test (extracts from SARS-Cov2 sequences), size= 8000 Bytes"
+	time valgrind --tool=cachegrind --D1=4096,4,64	\
+		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 8000 $(DIRTEST)/wuhan_hu_1.fasta 116 8000  2> valgrind4perf8000.output
+	cat valgrind4perf8000.output
+	@echo "*******************************"
+
+valgrind4perf10002000.output: $(A_TESTER) 
+	@@echo "Test 4 : performance test (extracts from SARS-Cov2 sequences)"
+	time valgrind --tool=cachegrind --D1=4096,4,64	\
+		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 1000 $(DIRTEST)/wuhan_hu_1.fasta 116 2000  2> valgrind4perf10002000.output
+	cat valgrind4perf10002000.output
+	@echo "*******************************"
+
+valgrind4perf10004000.output: $(A_TESTER) 
+	@@echo "Test 4 : performance test (extracts from SARS-Cov2 sequences), size= 2000 Bytes"
+	time valgrind --tool=cachegrind --D1=4096,4,64	\
+		$(A_TESTER) $(DIRTEST)/ba52_recent_omicron.fasta 153 1000 $(DIRTEST)/wuhan_hu_1.fasta 116 4000  2> valgrind4perf10004000.output
+	cat valgrind4perf10004000.output
 	@echo "*******************************"
 
 valgrind4perf10000.output: $(A_TESTER) 

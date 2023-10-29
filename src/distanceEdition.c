@@ -206,9 +206,8 @@ int main(int argc, char *argv[])
 #endif
    // long res = EditDistance_NW_Rec(seq[0], length[0], seq[1], length[1]);
    // long res = EditDistance_NW_Iter(seq[0], length[0], seq[1], length[1]);
-   // long res = EditDistance_NW_Iter_A(seq[0], length[0], seq[1], length[1]);
    // long res = EditDistance_NW_Iter_CA(seq[0], length[0], seq[1], length[1]);
-   long res = test_calcul_bloc(seq[0], length[0], seq[1], length[1]);
+   long res = EditDistance_NW_Iter_CO(seq[0], length[0], seq[1], length[1]);
 #ifdef __PERF_MESURE__
    perfstop_and_display(stderr, &p);
    // par exemple p.cumul_energy donne le nombre de kWh consommés sur le processeur entre l'appel à perf_start et celui à perfstop_and_display
